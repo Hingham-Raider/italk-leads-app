@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: italk-leads
+    runtime: node
+    buildCommand: npm install && node seed.js
+    startCommand: node server.js
+    envVars:
+      - key: PORT
+        value: 3000
+    disk:
+      name: leads-data
+      mountPath: /opt/render/project/src
+      sizeGB: 1
