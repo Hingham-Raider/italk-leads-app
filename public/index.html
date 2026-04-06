@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ITALK Lead Management</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #fff;
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: 0.5px; }
+    header .stats { font-size: 0.9rem; opacity: 0.8; }
+
+    .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+
+    .toolbar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar input[type="text"] {
+      flex: 1;
+      min-width: 200px;
+      padding: 10px 16px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    .toolbar input[type="text"]:focus { border-color: #4361ee; box-shadow: 0 0 0 3px rgba(67,97,238,0.15); }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-primary { background: #4361ee; color: #fff; }
+    .btn-primary:hover { background: #3a56d4; }
+    .btn-success { background: #2ec4b6; color: #fff; }
+    .btn-success:hover { background: #25a99d; }
+    .btn-danger { background: #e63946; color: #fff; }
+    .btn-danger:hover { background: #cf2f3c; }
+    .btn-ghost { background: transparent; color: #4361ee; border: 1px solid #4361ee; }
+    .btn-ghost:hover { background: #4361ee; color: #fff; }
+    .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+
+    .table-wrap {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      overflow-x: auto;
+    }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead { background: #f8f9fa; position: sticky; top: 0; z-index: 1; }
+    th { padding: 12px 14px; text-align: left; font-weight: 600; color: #555; white-space: nowrap; border-bottom: 2px solid #e9ecef; cursor: pointer; user-select: none; }
+    th:hover { color: #4361ee; }
+    td { padding: 10px 14px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+    tr:hover { background: #f8f9ff; }
+
+    .notes-cell { max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+    .notes-cell:hover { white-space: normal; }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .badge-won { background: #d4edda; color: #155724; }
+    .badge-lost { background: #f8d7da; color: #721c24; }
+    .badge-open { background: #fff3cd; color: #856404; }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 100;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 40px 16px;
+      overflow-y: auto;
+    }
+
+    .modal-overlay.active { display: flex; }
+
+    .modal {
+      background: #fff;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 720px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      animation: slideUp 0.25s ease;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .modal-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid #e9ecef;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h2 { font-size: 1.15rem; }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #999;
+      line-height: 1;
+    }
+
+    .modal-close:hover { color: #333; }
+
+    .modal-body { padding: 24px; }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-group.full { grid-column: 1 / -1; }
+
+    .form-group label { font-size: 0.8rem; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .form-group input, .form-group textarea, .form-group select {
+      padding: 10px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border 0.2s;
+      font-family: inherit;
+    }
+
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+      border-color: #4361ee;
+      box-shadow: 0 0 0 3px rgba(67,97,238,0.15);
+    }
+
+    .form-group textarea { resize: vertical; min-height: 100px; }
+
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid #e9ecef;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .checkbox-row { display: flex; gap: 24px; align-items: center; }
+    .checkbox-row label { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; font-weight: 500; color: #333; text-transform: none; letter-spacing: 0; cursor: pointer; }
+    .checkbox-row input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+
+    .empty-state h3 { font-size: 1.1rem; margin-bottom: 8px; }
+
+    .action-btns { display: flex; gap: 6px; }
+
+    @media (max-width: 768px) {
+      .form-grid { grid-template-columns: 1fr; }
+      header { flex-direction: column; gap: 8px; text-align: center; }
+      .toolbar { flex-direction: column; }
+      .toolbar input[type="text"] { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>ITALK Lead Overview</h1>
+  <div class="stats" id="stats">Loading...</div>
+</header>
+
+<div class="container">
+  <div class="toolbar">
+    <input type="text" id="searchInput" placeholder="Search leads by company, contact, city, notes...">
+    <button class="btn btn-primary" onclick="openModal()">+ New Lead</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th onclick="sortBy('date')">Date</th>
+          <th onclick="sortBy('company')">Company</th>
+          <th onclick="sortBy('contact')">Contact</th>
+          <th onclick="sortBy('email')">Email</th>
+          <th onclick="sortBy('phone')">Phone</th>
+          <th onclick="sortBy('city')">City</th>
+          <th onclick="sortBy('appointment_completed')">Appt</th>
+          <th onclick="sortBy('proposal')">Proposal</th>
+          <th>Status</th>
+          <th>Notes</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="leadsBody">
+        <tr><td colspan="11" class="empty-state"><h3>Loading leads...</h3></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this) closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalTitle">New Lead</h2>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="leadForm" onsubmit="saveLead(event)">
+        <input type="hidden" id="leadId">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="fDate">
+          </div>
+          <div class="form-group">
+            <label>Company *</label>
+            <input type="text" id="fCompany" required>
+          </div>
+          <div class="form-group full">
+            <label>Address</label>
+            <input type="text" id="fAddress">
+          </div>
+          <div class="form-group">
+            <label>Contact</label>
+            <input type="text" id="fContact">
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="fEmail">
+          </div>
+          <div class="form-group">
+            <label>Phone</label>
+            <input type="tel" id="fPhone">
+          </div>
+          <div class="form-group">
+            <label>City</label>
+            <input type="text" id="fCity">
+          </div>
+          <div class="form-group">
+            <label>Sys4</label>
+            <input type="text" id="fSys4">
+          </div>
+          <div class="form-group">
+            <label>Appointment Completed</label>
+            <input type="text" id="fAppt">
+          </div>
+          <div class="form-group">
+            <label>Proposal</label>
+            <input type="text" id="fProposal">
+          </div>
+          <div class="form-group">
+            <label>RS$</label>
+            <input type="number" step="0.01" id="fRS">
+          </div>
+          <div class="form-group">
+            <label>RM$</label>
+            <input type="number" step="0.01" id="fRM">
+          </div>
+          <div class="form-group full">
+            <div class="checkbox-row">
+              <label><input type="checkbox" id="fWon"> Won</label>
+              <label><input type="checkbox" id="fLost"> Lost</label>
+            </div>
+          </div>
+          <div class="form-group full">
+            <label>Notes</label>
+            <textarea id="fNotes" rows="4"></textarea>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="document.getElementById('leadForm').requestSubmit()">Save Lead</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let leads = [];
+let sortField = 'id';
+let sortDir = 'desc';
+
+async function fetchLeads() {
+  const res = await fetch('/api/leads');
+  leads = await res.json();
+  renderLeads();
+  updateStats();
+}
+
+function updateStats() {
+  const total = leads.length;
+  const won = leads.filter(l => l.won).length;
+  const lost = leads.filter(l => l.lost).length;
+  const open = total - won - lost;
+  document.getElementById('stats').textContent = `${total} leads | ${open} open | ${won} won | ${lost} lost`;
+}
+
+function renderLeads() {
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  let filtered = leads;
+  if (search) {
+    filtered = leads.filter(l =>
+      [l.company, l.contact, l.city, l.notes, l.email, l.address]
+        .filter(Boolean)
+        .some(v => v.toLowerCase().includes(search))
+    );
+  }
+
+  // Sort
+  filtered.sort((a, b) => {
+    let va = a[sortField] || '';
+    let vb = b[sortField] || '';
+    if (typeof va === 'string') va = va.toLowerCase();
+    if (typeof vb === 'string') vb = vb.toLowerCase();
+    if (va < vb) return sortDir === 'asc' ? -1 : 1;
+    if (va > vb) return sortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const tbody = document.getElementById('leadsBody');
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="11" class="empty-state"><h3>No leads found</h3><p>Add your first lead or adjust your search.</p></td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(l => {
+    const status = l.won ? '<span class="badge badge-won">Won</span>' :
+                   l.lost ? '<span class="badge badge-lost">Lost</span>' :
+                   '<span class="badge badge-open">Open</span>';
+    const dateStr = l.date ? new Date(l.date).toLocaleDateString() : '';
+    return `<tr>
+      <td>${dateStr}</td>
+      <td><strong>${esc(l.company)}</strong></td>
+      <td>${esc(l.contact || '')}</td>
+      <td>${l.email ? `<a href="mailto:${esc(l.email)}">${esc(l.email)}</a>` : ''}</td>
+      <td>${l.phone ? `<a href="tel:${esc(l.phone)}">${esc(l.phone)}</a>` : ''}</td>
+      <td>${esc(l.city || '')}</td>
+      <td>${esc(l.appointment_completed || '')}</td>
+      <td>${esc(l.proposal || '')}</td>
+      <td>${status}</td>
+      <td class="notes-cell" title="${esc(l.notes || '')}">${esc(l.notes || '')}</td>
+      <td class="action-btns">
+        <button class="btn btn-ghost btn-sm" onclick="editLead(${l.id})">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteLead(${l.id})">Del</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function sortBy(field) {
+  if (sortField === field) {
+    sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortField = field;
+    sortDir = 'asc';
+  }
+  renderLeads();
+}
+
+function openModal(lead = null) {
+  const overlay = document.getElementById('modalOverlay');
+  document.getElementById('modalTitle').textContent = lead ? 'Edit Lead' : 'New Lead';
+  document.getElementById('leadId').value = lead ? lead.id : '';
+  document.getElementById('fDate').value = lead?.date ? lead.date.split('T')[0] : '';
+  document.getElementById('fCompany').value = lead?.company || '';
+  document.getElementById('fAddress').value = lead?.address || '';
+  document.getElementById('fContact').value = lead?.contact || '';
+  document.getElementById('fEmail').value = lead?.email || '';
+  document.getElementById('fPhone').value = lead?.phone || '';
+  document.getElementById('fCity').value = lead?.city || '';
+  document.getElementById('fSys4').value = lead?.sys4 || '';
+  document.getElementById('fAppt').value = lead?.appointment_completed || '';
+  document.getElementById('fProposal').value = lead?.proposal || '';
+  document.getElementById('fRS').value = lead?.rs_dollar || '';
+  document.getElementById('fRM').value = lead?.rm_dollar || '';
+  document.getElementById('fWon').checked = !!lead?.won;
+  document.getElementById('fLost').checked = !!lead?.lost;
+  document.getElementById('fNotes').value = lead?.notes || '';
+  overlay.classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('active');
+}
+
+async function editLead(id) {
+  const lead = leads.find(l => l.id === id);
+  if (lead) openModal(lead);
+}
+
+async function saveLead(e) {
+  e.preventDefault();
+  const id = document.getElementById('leadId').value;
+  const data = {
+    date: document.getElementById('fDate').value || null,
+    company: document.getElementById('fCompany').value,
+    address: document.getElementById('fAddress').value,
+    contact: document.getElementById('fContact').value,
+    email: document.getElementById('fEmail').value,
+    phone: document.getElementById('fPhone').value,
+    city: document.getElementById('fCity').value,
+    sys4: document.getElementById('fSys4').value,
+    appointment_completed: document.getElementById('fAppt').value,
+    proposal: document.getElementById('fProposal').value,
+    rs_dollar: parseFloat(document.getElementById('fRS').value) || null,
+    rm_dollar: parseFloat(document.getElementById('fRM').value) || null,
+    won: document.getElementById('fWon').checked,
+    lost: document.getElementById('fLost').checked,
+    notes: document.getElementById('fNotes').value,
+  };
+
+  const url = id ? `/api/leads/${id}` : '/api/leads';
+  const method = id ? 'PUT' : 'POST';
+
+  const res = await fetch(url, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+
+  if (res.ok) {
+    closeModal();
+    fetchLeads();
+  } else {
+    alert('Error saving lead. Please try again.');
+  }
+}
+
+async function deleteLead(id) {
+  if (!confirm('Delete this lead?')) return;
+  const res = await fetch(`/api/leads/${id}`, { method: 'DELETE' });
+  if (res.ok) fetchLeads();
+}
+
+// Search debounce
+let searchTimeout;
+document.getElementById('searchInput').addEventListener('input', () => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(renderLeads, 200);
+});
+
+// Init
+fetchLeads();
+</script>
+</body>
+</html>
